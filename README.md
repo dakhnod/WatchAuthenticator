@@ -19,5 +19,16 @@ If authentication succeeds, the app saves the refresh token and reuses it on nex
 
 <img src="https://user-images.githubusercontent.com/26143255/145288512-c38fa91b-7d1d-4dec-9c51-3aef34867b10.png" width="300" />
 
+also, other people reported that those endpoints work, only for educational purposes, though:
+- https://api.skagen.linkplatforms.com/v2.1/rpc/auth/
+- https://api.skagen.linkplatforms.com/v2.1/rpc/device/
+- https://api.skagen.linkplatforms.com/v2/users/me/devices/
+- https://api.skagen.linkplatforms.com/v2/users/me/devices/%s/secret-key
+
+### Negotiating new key with watch
 Clicking on a scan result should result in a successfull Key negotiaion and the key in the clipboard,
 ready to be pasted in apps like GB.
+For this, only the first two endpoints need to be configured.
+
+### Retrieving key from Server
+If the device is paired with the manufacturer you can use the "Fetch key from server" button to download the key from the server.
