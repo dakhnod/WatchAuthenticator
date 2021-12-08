@@ -15,6 +15,7 @@ Just unzip the .apk and extract the "libs/" content, and pack it into the "jniLi
 The, after compiling and installing, enter the proper endpoints and credentials into the app.
 Once again, for educational purposes, I used Fossils servers.
 If authentication succeeds, the app saves the refresh token and reuses it on next open.
+(In the screenshot, all the urls start with "https://c.fossil.com", although it is cut off in the screenshot.
 
 <img src="https://user-images.githubusercontent.com/26143255/145288512-c38fa91b-7d1d-4dec-9c51-3aef34867b10.png" width="300" />
 
