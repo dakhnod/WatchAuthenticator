@@ -16,7 +16,7 @@ The, after compiling and installing, enter the proper endpoints and credentials 
 Once again, for educational purposes, I used Fossils servers.
 If authentication succeeds, the app saves the refresh token and reuses it on next open.
 
-<img src="https://user-images.githubusercontent.com/26143255/107891915-def2f380-6f21-11eb-9102-a7ece6f3887b.png" width="300" />
+<img src="https://user-images.githubusercontent.com/26143255/145288512-c38fa91b-7d1d-4dec-9c51-3aef34867b10.png" width="300" />
 
 Clicking on a scan result should result in a successfull Key negotiaion and the key in the clipboard,
 ready to be pasted in apps like GB.
