@@ -48,6 +48,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import javax.crypto.Cipher;
@@ -85,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
     UUID serialNumberUuid = UUID.fromString("00002A25-0000-1000-8000-00805f9b34fb");
     UUID authServiceUuid = UUID.fromString("3dda0001-957f-7d4a-34a6-74696673696d");
     UUID authCharacteristicUuid = UUID.fromString("3dda0005-957f-7d4a-34a6-74696673696d");
+
+    Timer requestTimeout = new Timer();
 
     TextView logTextView;
 
@@ -253,6 +257,38 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private void startAuthentication(BluetoothGatt gatt, String serialNumber){
+        try {
+            authenticatedViaServer = false;
+            JSONObject requestData = new JSONObject()
+                    .put("serialNumber", serialNumber);
+            JSONObject response = sendPostRequest(handshakeEndpoint + "generate-pairing-key", requestData);
+            byte[] randomNumber = Base64.decode(response.getString("randomKey"), 0);
+
+            ByteBuffer dataBuffer = ByteBuffer.allocate(11);
+            dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+            dataBuffer.put(new byte[]{0x02, 0x01, 0x00});
+            dataBuffer.put(randomNumber);
+
+            screenLog("sending random to watch...");
+            authCharacteristic.setValue(dataBuffer.array());
+            boolean success = gatt.writeCharacteristic(authCharacteristic);
+            if (!success) {
+                requestTimeout.cancel();
+                requestTimeout = null;
+                screenLog("failed writing random number to watch");
+                throw new RuntimeException("failed writing random number to watch");
+            }
+        } catch (JSONException | InterruptedException | IOException e) {
+            e.printStackTrace();
+            toast("failed getting random number from server");
+            screenLog("failed getting random number from server");
+            requestTimeout.cancel();
+            requestTimeout = null;
+        }
+    }
+
     BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
@@ -261,30 +297,7 @@ public class MainActivity extends AppCompatActivity {
                 serialNumber = characteristic.getStringValue(0);
                 // toast("serial: " + serialNumber);
                 screenLog("read serial number " + serialNumber + ". Requesting random from server...");
-                try {
-                    JSONObject requestData = new JSONObject()
-                            .put("serialNumber", serialNumber);
-                    JSONObject response = sendPostRequest(handshakeEndpoint + "generate-pairing-key", requestData);
-                    byte[] randomNumber = Base64.decode(response.getString("randomKey"), 0);
-
-                    ByteBuffer dataBuffer = ByteBuffer.allocate(11);
-                    dataBuffer.order(ByteOrder.LITTLE_ENDIAN);
-
-                    dataBuffer.put(new byte[]{0x02, 0x01, 0x00});
-                    dataBuffer.put(randomNumber);
-
-                    screenLog("sending random to watch...");
-                    authCharacteristic.setValue(dataBuffer.array());
-                    boolean success = gatt.writeCharacteristic(authCharacteristic);
-                    if (!success) {
-                        screenLog("failed writing random number to watch");
-                        throw new RuntimeException("failed writing random number to watch");
-                    }
-                } catch (JSONException | InterruptedException | IOException e) {
-                    e.printStackTrace();
-                    toast("failed getting random number from server");
-                    screenLog("failed getting random number from server");
-                }
+                startAuthentication(gatt, serialNumber);
                 // gatt.disconnect();
             }
         }
@@ -295,6 +308,18 @@ public class MainActivity extends AppCompatActivity {
             if (characteristic.getUuid().equals(authCharacteristicUuid)) {
                 ByteBuffer buffer = ByteBuffer.wrap(characteristic.getValue());
                 buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+                if(requestTimeout != null) {
+                    requestTimeout.cancel();
+                }
+                requestTimeout = new Timer();
+                requestTimeout.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        screenLog("request timeout, restarting...");
+                        startAuthentication(gatt, serialNumber);
+                    }
+                }, 5000);
 
                 if (buffer.get(1) == 0x01) {
                     byte[] encryptedNumbers = new byte[16];
@@ -322,6 +347,8 @@ public class MainActivity extends AppCompatActivity {
                         } catch (IOException | JSONException | InterruptedException e) {
                             e.printStackTrace();
                             toast("failed sending encrypted numbers to server");
+                            requestTimeout.cancel();
+                            requestTimeout = null;
                         }
                     }else{ // local challenge
                         try{
@@ -362,6 +389,8 @@ public class MainActivity extends AppCompatActivity {
                     if (buffer.get(2) != 0x00) {
                         toast(authenticatedViaServer ? "local random number challenge failed" : "server random number challenge failed");
                         screenLog(authenticatedViaServer ? "local random number challenge failed" : "server random number challenge failed");
+                        requestTimeout.cancel();
+                        requestTimeout = null;
                         gatt.disconnect();
                         return;
                     }
@@ -377,6 +406,8 @@ public class MainActivity extends AppCompatActivity {
                         toast("secret copied to clipboard");
                         screenLog("secret copied to clipboard.");
 
+                        requestTimeout.cancel();
+                        requestTimeout = null;
                         gatt.disconnect();
                     } else {
                         byte[] publicKey = MainActivity.this.keyPair.getPublicKey();
