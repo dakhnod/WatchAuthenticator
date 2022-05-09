@@ -7,7 +7,7 @@ I, for instance, use the authenticator to authenticate my Fossil HR against the 
 
 First, the proper crypto lib needs to be injected into the project. 
 The proper lib can be acquired from already existing Apks.
-For educational purposes, you can extract the libs from an app like "Fossil smartwatches" v4.6.0.
+For educational purposes, you can extract the libs from an app like "regualr.
 Just unzip the .apk and extract the "libs/" content, and pack it into the "jniLibs" folder from this project.
 
 <img src="https://user-images.githubusercontent.com/26143255/107892793-af46ea00-6f27-11eb-8c82-045e58be71e2.png" width="300" />
@@ -22,7 +22,7 @@ If authentication succeeds, the app saves the refresh token and reuses it on nex
 also, other people reported that those endpoints work, only for educational purposes, though:
 - https://api.skagen.linkplatforms.com/v2.1/rpc/auth/
 - https://api.skagen.linkplatforms.com/v2.1/rpc/device/
-- https://api.skagen.linkplatforms.com/v2/users/me/devices/
+- https://api.skagen.linkplatforms.com/v2/users/me/devices
 - https://api.skagen.linkplatforms.com/v2/users/me/devices/%s/secret-key
 
 ### Negotiating new key with watch
