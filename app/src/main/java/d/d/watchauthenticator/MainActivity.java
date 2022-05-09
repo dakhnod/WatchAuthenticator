@@ -193,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
 
     private JSONObject sendGetRequest(String endpoint) throws IOException, JSONException, InterruptedException {
         URL url = new URL(endpoint);
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
@@ -202,7 +203,9 @@ public class MainActivity extends AppCompatActivity {
         connection.setDoInput(true);
         int response = connection.getResponseCode();
         if (response != 200) {
-            throw new RuntimeException("response code is not 200: " + response);
+            toast("Response code is:"+response+" Perhaps check the URLs for typos");
+            return null;
+
         }
         InputStream is = connection.getInputStream();
 
@@ -554,6 +557,9 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     JSONObject result = sendGetRequest(deviceListUri);
+                    if(result == null){
+                        return;
+                    }
                     JSONArray devices = result.getJSONArray("_items");
                     screenLog("got device list");
                     if(devices.length() < 1){
