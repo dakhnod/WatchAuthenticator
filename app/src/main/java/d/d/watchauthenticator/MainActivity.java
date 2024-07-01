@@ -44,6 +44,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +59,10 @@ import java.util.UUID;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActiviry";
@@ -103,11 +111,41 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
 
+        disableSSLCertificateChecking();
+
         autoLogin();
 
         EllipticCurveKeyPair$CppProxy result = EllipticCurveKeyPair$CppProxy.create();
 
         Log.d("", "");
+    }
+
+    private void disableSSLCertificateChecking() {
+        TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+
+            @Override
+            public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                // Not implemented
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                // Not implemented
+            }
+        } };
+
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 
     private void screenLog(String data){
@@ -171,13 +209,15 @@ public class MainActivity extends AppCompatActivity {
         byte[] authData = postData.toString().getBytes();
 
         URL url = new URL(endpoint);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         connection.setRequestProperty("Content-Type", "application/json");
         if (this.accessToken != null && !this.accessToken.isEmpty()) {
             connection.setRequestProperty("Authorization", "Bearer " + this.accessToken);
         }
+        connection.setRequestProperty("x-ratelimit-value", "dakhnod@gmail.com");
+
         connection.setDoOutput(true);
         connection.setDoInput(true);
         connection.setFixedLengthStreamingMode(authData.length);
@@ -197,8 +237,7 @@ public class MainActivity extends AppCompatActivity {
 
     private JSONObject sendGetRequest(String endpoint) throws IOException, JSONException, InterruptedException {
         URL url = new URL(endpoint);
-
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
         connection.setConnectTimeout(10000);
         connection.setReadTimeout(10000);
         if (this.accessToken != null && !this.accessToken.isEmpty()) {
@@ -300,7 +339,12 @@ public class MainActivity extends AppCompatActivity {
                 serialNumber = characteristic.getStringValue(0);
                 // toast("serial: " + serialNumber);
                 screenLog("read serial number " + serialNumber + ". Requesting random from server...");
-                startAuthentication(gatt, serialNumber);
+                try {
+                    startAuthentication(gatt, serialNumber);
+                }catch (Exception e){
+                    e.printStackTrace();
+                    screenLog(e.getMessage());
+                }
                 // gatt.disconnect();
             }
         }
