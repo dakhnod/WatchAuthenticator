@@ -19,6 +19,10 @@ If authentication succeeds, the app saves the refresh token and reuses it on nex
 
 <img src="https://user-images.githubusercontent.com/26143255/145288512-c38fa91b-7d1d-4dec-9c51-3aef34867b10.png" width="300" />
 
+My latest attempt worked with:
+Auth Endpoint: https://api.fossil.linkplatforms.com/v2/rpc/auth/login/
+Handshake Endpoint: https://api.fossil.linkplatforms.com/v2/rpc/device/
+
 also, other people reported that those endpoints work, only for educational purposes, though:
 - https://api.skagen.linkplatforms.com/v2.1/rpc/auth/
 - https://api.skagen.linkplatforms.com/v2.1/rpc/device/
